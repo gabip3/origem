@@ -45,7 +45,7 @@
         max(28px, env(safe-area-inset-bottom));
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
       position: relative;
       isolation: isolate;
@@ -125,7 +125,7 @@
     .sub {
       margin: 0;
       color: var(--muted);
-      font-size: 14px;
+      font-size: 19px;
       line-height: 1.6;
     }
 
@@ -306,9 +306,9 @@
 
     .verse {
       color: #aaa49b;
-      font-size: 14px;
+      font-size: 18px;
       line-height: 1.65;
-      max-width: 340px;
+      max-width: 380px;
       margin: 0 auto;
     }
 
@@ -332,14 +332,17 @@
     }
 
     .identity-grid small {
-      color: #6f6b65;
-      font-size: 9px;
+      background: linear-gradient(90deg, #5eead4, #67e8f9);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      font-size: 11px;
       letter-spacing: .16em;
       text-transform: uppercase;
     }
 
     .identity-grid b {
-      font-size: 15px;
+      font-size: 19px;
       font-weight: 520;
     }
 
@@ -380,11 +383,6 @@
 <body>
   <main class="app">
     <div class="grain"></div>
-
-    <div class="top">
-      <span><i class="status-dot"></i>identity scan</span>
-      <span>01</span>
-    </div>
 
     <section class="center">
       <div class="copy">
@@ -427,8 +425,6 @@
         <div class="micro" id="micro">aguardando contato</div>
       </div>
     </section>
-
-    <div class="hint">Este site não acessa sua biometria. A mágica acontece só na interação ✦</div>
 
     <section class="result" id="result">
       <div class="result-inner">
