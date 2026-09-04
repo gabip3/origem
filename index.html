@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0c0c0c" />
+  <title>Identidade Detectada</title>
+
+  <style>
+    :root {
+      --bg: #0b0b0b;
+      --fg: #f7f3ea;
+      --muted: #9a968f;
+      --line: rgba(255,255,255,.12);
+      --glow: rgba(255,255,255,.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overscroll-behavior: none;
+    }
+
+    body {
+      min-height: 100svh;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      touch-action: none;
+    }
+
+    .app {
+      width: min(100%, 520px);
+      min-height: 100svh;
+      padding:
+        max(28px, env(safe-area-inset-top))
+        24px
+        max(28px, env(safe-area-inset-bottom));
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      isolation: isolate;
+    }
+
+    .grain {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: .045;
+      background-image:
+        radial-gradient(circle at 20% 30%, #fff 0 1px, transparent 1px),
+        radial-gradient(circle at 80% 60%, #fff 0 1px, transparent 1px);
+      background-size: 18px 18px, 23px 23px;
+      z-index: -1;
+    }
+
+    .top {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: #7f7b74;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      display: inline-block;
+      margin-right: 8px;
+      opacity: .8;
+    }
+
+    .center {
+      width: 100%;
+      display: grid;
+      place-items: center;
+      gap: 34px;
+      text-align: center;
+      transform: translateY(-1vh);
+    }
+
+    .copy {
+      display: grid;
+      gap: 10px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 8vw, 46px);
+      line-height: .98;
+      font-weight: 560;
+      letter-spacing: -.04em;
+    }
+
+    .sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .scanner-wrap {
+      position: relative;
+      width: 230px;
+      height: 230px;
+      display: grid;
+      place-items: center;
+    }
+
+    .scanner {
+      width: 186px;
+      height: 186px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      position: relative;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,.025), transparent 64%),
+        var(--bg);
+      box-shadow:
+        0 0 0 18px rgba(255,255,255,.015),
+        0 0 80px rgba(255,255,255,.025);
+      transition: transform .2s ease, border-color .25s ease;
+    }
+
+    .scanner:active { transform: scale(.985); }
+
+    .scanner::before,
+    .scanner::after {
+      content: "";
+      position: absolute;
+      inset: 16px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.06);
+    }
+
+    .scanner::after {
+      inset: 42px;
+      border-color: rgba(255,255,255,.08);
+    }
+
+    .fingerprint {
+      width: 92px;
+      height: 112px;
+      opacity: .58;
+      transition: opacity .25s ease, filter .25s ease, transform .25s ease;
+    }
+
+    .scanner.active .fingerprint {
+      opacity: 1;
+      filter: drop-shadow(0 0 18px rgba(255,255,255,.18));
+      transform: scale(1.03);
+    }
+
+    .ring {
+      position: absolute;
+      inset: 0;
+      transform: rotate(-90deg);
+      pointer-events: none;
+    }
+
+    .ring circle {
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .ring .track { stroke: rgba(255,255,255,.06); }
+
+    .ring .progress {
+      stroke: rgba(255,255,255,.95);
+      stroke-linecap: round;
+      stroke-dasharray: 691;
+      stroke-dashoffset: 691;
+      transition: stroke-dashoffset .05s linear;
+      filter: drop-shadow(0 0 8px rgba(255,255,255,.2));
+    }
+
+    .scan-line {
+      position: absolute;
+      width: 112px;
+      height: 1px;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.92), transparent);
+      opacity: 0;
+      filter: blur(.1px);
+      box-shadow: 0 0 12px rgba(255,255,255,.25);
+    }
+
+    .scanner.active .scan-line {
+      opacity: 1;
+      animation: scan 1.15s ease-in-out infinite;
+    }
+
+    @keyframes scan {
+      0%,100% { transform: translate(-50%, -44px); opacity: .25; }
+      50% { transform: translate(-50%, 44px); opacity: 1; }
+    }
+
+    .progress-copy {
+      min-height: 52px;
+      display: grid;
+      gap: 4px;
+      place-items: center;
+    }
+
+    .percent {
+      font-size: 28px;
+      font-weight: 560;
+      letter-spacing: -.03em;
+    }
+
+    .micro {
+      font-size: 10px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: #77736d;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #6f6b65;
+      text-align: center;
+      max-width: 320px;
+      line-height: 1.5;
+    }
+
+    .result {
+      position: absolute;
+      inset: 0;
+      padding:
+        max(28px, env(safe-area-inset-top))
+        28px
+        max(28px, env(safe-area-inset-bottom));
+      display: grid;
+      place-items: center;
+      background: var(--bg);
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(1.025);
+      transition: opacity .7s ease, transform .7s ease;
+      z-index: 10;
+    }
+
+    .result.show {
+      opacity: 1;
+      pointer-events: auto;
+      transform: scale(1);
+    }
+
+    .result-inner {
+      text-align: center;
+      width: min(100%, 430px);
+      display: grid;
+      gap: 26px;
+    }
+
+    .eyebrow {
+      font-size: 11px;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: #858078;
+    }
+
+    .yes {
+      font-size: clamp(74px, 24vw, 132px);
+      line-height: .82;
+      letter-spacing: -.07em;
+      margin: 0;
+      font-weight: 700;
+    }
+
+    .dna {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(26px, 8vw, 42px);
+      font-weight: 400;
+      line-height: 1.05;
+      letter-spacing: -.025em;
+    }
+
+    .verse {
+      color: #aaa49b;
+      font-size: 14px;
+      line-height: 1.65;
+      max-width: 340px;
+      margin: 0 auto;
+    }
+
+    .verse strong {
+      color: var(--fg);
+      font-weight: 500;
+    }
+
+    .identity-grid {
+      margin-top: 8px;
+      padding-top: 24px;
+      border-top: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .identity-grid div {
+      display: grid;
+      gap: 4px;
+    }
+
+    .identity-grid small {
+      color: #6f6b65;
+      font-size: 9px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .identity-grid b {
+      font-size: 15px;
+      font-weight: 520;
+    }
+
+    .reset {
+      appearance: none;
+      border: 0;
+      background: transparent;
+      color: #77736d;
+      font: inherit;
+      font-size: 11px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      padding: 14px;
+      cursor: pointer;
+    }
+
+    .flash {
+      position: fixed;
+      inset: 0;
+      background: #fff;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 30;
+    }
+
+    .flash.go {
+      animation: flash .62s ease-out;
+    }
+
+    @keyframes flash {
+      0% { opacity: 0; }
+      14% { opacity: .86; }
+      100% { opacity: 0; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <div class="grain"></div>
+
+    <div class="top">
+      <span><i class="status-dot"></i>identity scan</span>
+      <span>01</span>
+    </div>
+
+    <section class="center">
+      <div class="copy">
+        <h1>Encoste seu dedo aqui.</h1>
+        <p class="sub">Segure por alguns segundos.<br>Vamos descobrir sua origem.</p>
+      </div>
+
+      <div class="scanner-wrap">
+        <svg class="ring" viewBox="0 0 230 230" aria-hidden="true">
+          <circle class="track" cx="115" cy="115" r="110"></circle>
+          <circle class="progress" cx="115" cy="115" r="110"></circle>
+        </svg>
+
+        <div class="scanner" id="scanner" role="button" aria-label="Segure o dedo para iniciar a leitura">
+          <div class="scan-line"></div>
+
+          <svg class="fingerprint" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M50 8C27 8 12 23 12 45c0 14 7 24 7 39" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M50 16c-19 0-30 12-30 29 0 15 7 26 5 45" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M50 24c-14 0-22 9-22 22 0 13 7 23 3 49" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M50 31c-10 0-15 6-15 15 0 11 7 18 4 45" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M50 39c-5 0-8 3-8 8 0 9 7 14 5 36" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M50 8c23 0 38 15 38 37 0 14-7 24-7 39" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M50 16c19 0 30 12 30 29 0 15-7 26-5 45" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M50 24c14 0 22 9 22 22 0 13-7 23-3 49" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M50 31c10 0 15 6 15 15 0 11-7 18-4 45" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M50 39c5 0 8 3 8 8 0 9-7 14-5 36" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M50 47v48" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M22 103c10-16 6-31 4-44" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M78 103c-10-16-6-31-4-44" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="progress-copy">
+        <div class="percent" id="percent">0%</div>
+        <div class="micro" id="micro">aguardando contato</div>
+      </div>
+    </section>
+
+    <div class="hint">Este site não acessa sua biometria. A mágica acontece só na interação ✦</div>
+
+    <section class="result" id="result">
+      <div class="result-inner">
+        <div class="eyebrow">identidade confirmada</div>
+
+        <h2 class="yes">SIM.</h2>
+
+        <p class="dna">DNA de Deus detectado.</p>
+
+        <p class="verse">
+          “Criou Deus o ser humano à sua imagem...”<br>
+          <strong>Gênesis 1:27</strong>
+        </p>
+
+        <div class="identity-grid">
+          <div>
+            <small>origem</small>
+            <b>Criado por Deus</b>
+          </div>
+          <div>
+            <small>status</small>
+            <b>Profundamente amado</b>
+          </div>
+        </div>
+
+        <button class="reset" id="reset">ler novamente</button>
+      </div>
+    </section>
+
+    <div class="flash" id="flash"></div>
+  </main>
+
+  <script>
+    const scanner = document.getElementById('scanner');
+    const progressCircle = document.querySelector('.ring .progress');
+    const percent = document.getElementById('percent');
+    const micro = document.getElementById('micro');
+    const result = document.getElementById('result');
+    const reset = document.getElementById('reset');
+    const flash = document.getElementById('flash');
+
+    const total = 2600;
+    const circumference = 691;
+    let raf = null;
+    let start = null;
+    let active = false;
+    let completed = false;
+
+    const labels = [
+      [0, 'iniciando leitura'],
+      [18, 'lendo identidade'],
+      [42, 'comparando origem'],
+      [66, 'validando assinatura'],
+      [86, 'correspondência encontrada']
+    ];
+
+    function vibrate(pattern) {
+      if ('vibrate' in navigator) navigator.vibrate(pattern);
+    }
+
+    function labelFor(p) {
+      let current = labels[0][1];
+      for (const [threshold, label] of labels) {
+        if (p >= threshold) current = label;
+      }
+      return current;
+    }
+
+    function update(p) {
+      const safe = Math.max(0, Math.min(100, p));
+      percent.textContent = Math.floor(safe) + '%';
+      micro.textContent = labelFor(safe);
+      progressCircle.style.strokeDashoffset = circumference * (1 - safe / 100);
+    }
+
+    function tick(ts) {
+      if (!active) return;
+      if (!start) start = ts;
+      const elapsed = ts - start;
+      const p = Math.min(100, (elapsed / total) * 100);
+      update(p);
+
+      if (p < 100) {
+        raf = requestAnimationFrame(tick);
+      } else {
+        finish();
+      }
+    }
+
+    function begin(e) {
+      if (completed || active) return;
+      if (e.cancelable) e.preventDefault();
+
+      active = true;
+      start = null;
+      scanner.classList.add('active');
+      micro.textContent = 'iniciando leitura';
+      vibrate(20);
+      raf = requestAnimationFrame(tick);
+    }
+
+    function cancel(e) {
+      if (!active || completed) return;
+      if (e && e.cancelable) e.preventDefault();
+
+      active = false;
+      scanner.classList.remove('active');
+      cancelAnimationFrame(raf);
+
+      micro.textContent = 'mantenha o dedo pressionado';
+      vibrate(12);
+
+      const current = parseInt(percent.textContent) || 0;
+      let p = current;
+
+      const decay = setInterval(() => {
+        p -= 7;
+        update(Math.max(0, p));
+        if (p <= 0) {
+          clearInterval(decay);
+          micro.textContent = 'aguardando contato';
+        }
+      }, 28);
+    }
+
+    function finish() {
+      active = false;
+      completed = true;
+      scanner.classList.remove('active');
+      percent.textContent = '100%';
+      micro.textContent = 'identidade confirmada';
+      vibrate([45, 45, 90]);
+
+      flash.classList.remove('go');
+      void flash.offsetWidth;
+      flash.classList.add('go');
+
+      setTimeout(() => {
+        result.classList.add('show');
+      }, 240);
+    }
+
+    function restart() {
+      completed = false;
+      active = false;
+      start = null;
+      update(0);
+      micro.textContent = 'aguardando contato';
+      result.classList.remove('show');
+    }
+
+    scanner.addEventListener('pointerdown', begin);
+    scanner.addEventListener('pointerup', cancel);
+    scanner.addEventListener('pointercancel', cancel);
+    scanner.addEventListener('pointerleave', cancel);
+
+    reset.addEventListener('click', restart);
+
+    document.addEventListener('contextmenu', e => e.preventDefault());
+  </script>
+</body>
+</html>
